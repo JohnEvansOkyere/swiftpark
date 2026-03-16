@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SwiftPark — Smart Parking Alerts</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0B1829;--navy2:#112236;--navy3:#1A3050;
+  --accent:#00C48C;--accent2:#00A376;
+  --red:#FF5A5A;--amber:#F5A623;--blue:#4A9EFF;
+  --text:#F0F4F8;--text2:#8AA4BF;--text3:#4A6580;
+  --border:#1E3A54;--card:#112236;
+  --font:'DM Sans',sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+body{background:var(--navy);color:var(--text);font-family:var(--font);min-height:100vh;font-size:15px;}
+.app{display:flex;flex-direction:column;min-height:100vh;max-width:480px;margin:0 auto;}
+.header{background:var(--navy2);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:34px;height:34px;background:var(--accent);border-radius:9px;display:flex;align-items:center;justify-content:center;}
+.logo-icon svg{width:19px;height:19px;fill:#0B1829;}
+.logo-name{font-size:17px;font-weight:600;letter-spacing:-0.5px;}
+.logo-sub{font-size:11px;color:var(--text2);margin-top:1px;}
+.branch-select{background:var(--navy3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:12px;padding:5px 10px;font-family:var(--font);cursor:pointer;outline:none;}
+.status-dot{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2);}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.nav{display:flex;background:var(--navy2);border-bottom:1px solid var(--border);padding:0 16px;}
+.nav-btn{padding:14px 18px;font-size:13px;font-weight:500;color:var(--text2);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap;}
+.nav-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+.content{flex:1;padding:20px 16px;overflow-y:auto;}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;}
+.metric{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;}
+.metric-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;}
+.metric-value{font-size:26px;font-weight:600;font-family:var(--mono);}
+.metric-value.green{color:var(--accent);}
+.metric-value.amber{color:var(--amber);}
+.metric-value.blue{color:var(--blue);}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:4px;}
+.section-title{font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:12px;}
+.activity-list{display:flex;flex-direction:column;gap:8px;}
+.activity-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;}
+.activity-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.activity-dot.called{background:var(--accent);}
+.activity-dot.missed{background:var(--red);}
+.activity-dot.parked{background:var(--blue);}
+.activity-text{flex:1;font-size:13px;color:var(--text);}
+.activity-plate{font-family:var(--mono);font-size:13px;font-weight:500;}
+.activity-time{font-size:11px;color:var(--text3);margin-top:2px;}
+.form-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;}
+.form-group{margin-bottom:16px;}
+.form-label{font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;display:block;}
+.form-input{width:100%;padding:14px 16px;background:var(--navy3);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:18px;font-family:var(--mono);font-weight:500;letter-spacing:1.5px;outline:none;transition:border-color 0.2s;}
+.form-input:focus{border-color:var(--accent);}
+.form-input::placeholder{font-size:15px;letter-spacing:0.5px;color:var(--text3);}
+.btn-primary{width:100%;padding:16px;background:var(--accent);color:#0B1829;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:var(--font);}
+.btn-primary:active{transform:scale(0.98);}
+.success-flash{display:none;background:rgba(0,196,140,0.12);border:1px solid rgba(0,196,140,0.3);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--accent);margin-bottom:14px;text-align:center;}
+.parked-list{display:flex;flex-direction:column;gap:10px;}
+.car-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;}
+.car-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.car-plate{font-family:var(--mono);font-size:18px;font-weight:500;letter-spacing:1.5px;}
+.car-badge{font-size:10px;padding:3px 8px;border-radius:20px;background:rgba(74,158,255,0.15);color:var(--blue);font-weight:500;}
+.car-phone{font-size:13px;color:var(--text2);margin-bottom:4px;}
+.car-time{font-size:11px;color:var(--text3);margin-bottom:12px;}
+.btn-call{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;background:transparent;border:1px solid var(--accent);border-radius:8px;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:var(--font);}
+.btn-call:hover{background:rgba(0,196,140,0.08);}
+.btn-call svg{width:14px;height:14px;fill:var(--accent);}
+.btn-call.done{opacity:0.7;}
+.empty-state{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(11,24,41,0.93);z-index:100;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--navy2);border:1px solid var(--border);border-radius:20px;padding:28px 24px;max-width:340px;width:100%;text-align:center;}
+.call-ring{width:80px;height:80px;border-radius:50%;background:rgba(0,196,140,0.1);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;position:relative;}
+.call-ring.ringing::before{content:'';position:absolute;inset:-8px;border-radius:50%;border:2px solid rgba(0,196,140,0.3);animation:ring 1.2s infinite;}
+.call-ring.ringing::after{content:'';position:absolute;inset:-18px;border-radius:50%;border:2px solid rgba(0,196,140,0.12);animation:ring 1.2s 0.4s infinite;}
+@keyframes ring{0%{transform:scale(1);opacity:1}100%{transform:scale(1.3);opacity:0}}
+.call-ring svg{width:34px;height:34px;fill:var(--accent);}
+.call-plate{font-family:var(--mono);font-size:22px;font-weight:500;letter-spacing:2px;margin-bottom:4px;}
+.call-phone{font-size:14px;color:var(--text2);margin-bottom:14px;}
+.call-status{font-size:13px;font-weight:500;padding:6px 14px;border-radius:20px;display:inline-block;margin-bottom:18px;}
+.call-status.connecting{background:rgba(245,166,35,0.15);color:var(--amber);}
+.call-status.ringing{background:rgba(74,158,255,0.15);color:var(--blue);}
+.call-status.answered{background:rgba(0,196,140,0.15);color:var(--accent);}
+.call-msg{font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:20px;padding:12px 14px;background:var(--navy);border-radius:8px;text-align:left;border-left:2px solid var(--accent);}
+.call-msg-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;}
+.speaking-bar{display:none;align-items:center;justify-content:center;gap:3px;margin-bottom:16px;}
+.speaking-bar.active{display:flex;}
+.bar{width:3px;background:var(--accent);border-radius:2px;animation:bounce 0.8s infinite ease-in-out;}
+.bar:nth-child(1){height:8px;animation-delay:0s;}
+.bar:nth-child(2){height:16px;animation-delay:0.1s;}
+.bar:nth-child(3){height:22px;animation-delay:0.2s;}
+.bar:nth-child(4){height:16px;animation-delay:0.3s;}
+.bar:nth-child(5){height:8px;animation-delay:0.4s;}
+@keyframes bounce{0%,100%{transform:scaleY(0.5);opacity:0.5}50%{transform:scaleY(1);opacity:1}}
+.btn-dismiss{padding:12px 28px;background:var(--navy3);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);}
+.powered{text-align:center;padding:16px;font-size:11px;color:var(--text3);}
+.powered span{color:var(--accent);font-weight:500;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      </div>
+      <div>
+        <div class="logo-name">SwiftPark</div>
+        <div class="logo-sub">Smart parking alerts</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <select class="branch-select">
+        <option>Head Office</option>
+        <option>Accra Central</option>
+        <option>Tema Branch</option>
+        <option>Airport Branch</option>
+        <option>Kumasi Branch</option>
+      </select>
+      <div class="status-dot"><div class="dot"></div><span>Live</span></div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button class="nav-btn active" onclick="showTab('dashboard')">Dashboard</button>
+    <button class="nav-btn" onclick="showTab('register')">Register Car</button>
+    <button class="nav-btn" onclick="showTab('parked')">Parked (<span id="parked-count">3</span>)</button>
+  </div>
+
+  <div class="content">
+    <div id="tab-dashboard">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Cars today</div><div class="metric-value blue" id="m-cars">24</div><div class="metric-sub">Since 7:00 AM</div></div>
+        <div class="metric"><div class="metric-label">Alerts sent</div><div class="metric-value amber" id="m-alerts">6</div><div class="metric-sub">4 calls · 2 SMS</div></div>
+        <div class="metric"><div class="metric-label">Avg. response</div><div class="metric-value green">1m 42s</div><div class="metric-sub">All resolved</div></div>
+      </div>
+      <div class="section-title">Recent activity</div>
+      <div class="activity-list" id="activity-list">
+        <div class="activity-item"><div class="activity-dot called"></div><div><div class="activity-text">Owner of <span class="activity-plate">GR-2341-23</span> called — answered in 48s</div><div class="activity-time">10:14 AM</div></div></div>
+        <div class="activity-item"><div class="activity-dot parked"></div><div><div class="activity-text"><span class="activity-plate">AS-8812-22</span> registered at entry</div><div class="activity-time">10:31 AM</div></div></div>
+        <div class="activity-item"><div class="activity-dot called"></div><div><div class="activity-text">Owner of <span class="activity-plate">GT-1190-21</span> called — answered in 1m 12s</div><div class="activity-time">10:02 AM</div></div></div>
+        <div class="activity-item"><div class="activity-dot missed"></div><div><div class="activity-text">Owner of <span class="activity-plate">WR-4401-20</span> — SMS fallback sent</div><div class="activity-time">9:47 AM</div></div></div>
+        <div class="activity-item"><div class="activity-dot parked"></div><div><div class="activity-text"><span class="activity-plate">GW-5521-23</span> registered at entry</div><div class="activity-time">9:31 AM</div></div></div>
+      </div>
+    </div>
+
+    <div id="tab-register" style="display:none">
+      <div class="success-flash" id="reg-success">Car registered. Owner is reachable if needed.</div>
+      <div class="form-card">
+        <div class="form-group">
+          <label class="form-label">Plate number</label>
+          <input class="form-input" id="inp-plate" placeholder="GR-0000-00" maxlength="14" oninput="this.value=this.value.toUpperCase()"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Owner's phone number</label>
+          <input class="form-input" id="inp-phone" placeholder="024 000 0000" type="tel" style="letter-spacing:1px;"/>
+        </div>
+        <button class="btn-primary" onclick="registerCar()">Save &amp; Let In</button>
+      </div>
+    </div>
+
+    <div id="tab-parked" style="display:none">
+      <div class="parked-list" id="parked-list"></div>
+    </div>
+  </div>
+  <div class="powered">Powered by <span>SwiftPark</span> · Africa's Talking voice API</div>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="call-ring" id="call-ring">
+      <svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+    </div>
+    <div class="call-plate" id="modal-plate">GR-2341-23</div>
+    <div class="call-phone" id="modal-phone">0244 123 456</div>
+    <div class="call-status connecting" id="call-status">Connecting...</div>
+    <div class="speaking-bar" id="speaking-bar">
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+    </div>
+    <div class="call-msg" style="display:none" id="call-msg">
+      <div class="call-msg-label">Automated voice message</div>
+      <span id="msg-text"></span>
+    </div>
+    <button class="btn-dismiss" id="btn-dismiss" style="display:none" onclick="closeModal()">Done</button>
+  </div>
+</div>
+
+<script>
+let cars=[
+  {plate:'GR-2341-23',phone:'0244 123 456',time:'9:14 AM',called:false},
+  {plate:'AS-8812-22',phone:'0554 987 654',time:'9:31 AM',called:false},
+  {plate:'GT-1190-21',phone:'0277 345 678',time:'10:02 AM',called:false},
+];
+let carCount=24,alertCount=6;
+
+function speakMessage(plate){
+  window.speechSynthesis.cancel();
+  const msg=new SpeechSynthesisUtterance();
+  msg.text=`Hello. Your vehicle with registration ${plate.split('').join(' ')} is blocking another customer at the parking area. Please return to your vehicle immediately. Thank you.`;
+  msg.rate=0.88;msg.pitch=1.0;msg.volume=1;
+  const voices=window.speechSynthesis.getVoices();
+  const preferred=voices.find(v=>v.lang.startsWith('en')&&v.name.toLowerCase().includes('female'))
+    ||voices.find(v=>v.lang.startsWith('en-GB'))
+    ||voices.find(v=>v.lang.startsWith('en'));
+  if(preferred) msg.voice=preferred;
+  msg.onend=()=>document.getElementById('speaking-bar').classList.remove('active');
+  window.speechSynthesis.speak(msg);
+}
+
+function showTab(t){
+  ['dashboard','register','parked'].forEach(id=>{
+    document.getElementById('tab-'+id).style.display=id===t?'block':'none';
+  });
+  document.querySelectorAll('.nav-btn').forEach((b,i)=>{
+    b.classList.toggle('active',['dashboard','register','parked'][i]===t);
+  });
+  if(t==='parked') renderParked();
+}
+
+function renderParked(){
+  const list=document.getElementById('parked-list');
+  if(!cars.length){list.innerHTML='<div class="empty-state">No cars currently registered.</div>';return;}
+  list.innerHTML=cars.map((c,i)=>`
+    <div class="car-card">
+      <div class="car-top"><div class="car-plate">${c.plate}</div><div class="car-badge">Parked</div></div>
+      <div class="car-phone">${c.phone}</div>
+      <div class="car-time">Entered ${c.time}</div>
+      <button class="btn-call ${c.called?'done':''}" onclick="triggerCall(${i})">
+        <svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+        ${c.called?'Call again':'Call owner now'}
+      </button>
+    </div>
+  `).join('');
+}
+
+function triggerCall(i){
+  const c=cars[i];
+  document.getElementById('modal-plate').textContent=c.plate;
+  document.getElementById('modal-phone').textContent=c.phone;
+  document.getElementById('msg-text').textContent='"Hello. Your vehicle with registration '+c.plate+' is blocking another customer at the parking area. Please return to your vehicle immediately. Thank you."';
+  const ring=document.getElementById('call-ring');
+  const status=document.getElementById('call-status');
+  const callMsg=document.getElementById('call-msg');
+  const dismiss=document.getElementById('btn-dismiss');
+  const speakBar=document.getElementById('speaking-bar');
+  ring.className='call-ring';
+  status.className='call-status connecting';
+  status.textContent='Connecting...';
+  callMsg.style.display='none';
+  dismiss.style.display='none';
+  speakBar.classList.remove('active');
+  document.getElementById('modal').classList.add('show');
+  setTimeout(()=>{ring.className='call-ring ringing';status.className='call-status ringing';status.textContent='Ringing...';},1400);
+  setTimeout(()=>{
+    ring.className='call-ring';
+    status.className='call-status answered';
+    status.textContent='Call answered';
+    callMsg.style.display='block';
+    speakBar.classList.add('active');
+    dismiss.style.display='inline-block';
+    cars[i].called=true;
+    alertCount++;
+    document.getElementById('m-alerts').textContent=alertCount;
+    addActivity('Owner of <span class="activity-plate">'+c.plate+'</span> called — answered','called');
+    speakMessage(c.plate);
+  },4000);
+}
+
+function closeModal(){
+  window.speechSynthesis.cancel();
+  document.getElementById('modal').classList.remove('show');
+  document.getElementById('speaking-bar').classList.remove('active');
+  renderParked();
+}
+
+function registerCar(){
+  const plate=document.getElementById('inp-plate').value.trim();
+  const phone=document.getElementById('inp-phone').value.trim();
+  if(!plate||!phone){alert('Please enter both plate number and phone number.');return;}
+  const now=new Date();
+  const time=now.toLocaleTimeString('en-GH',{hour:'2-digit',minute:'2-digit'});
+  cars.unshift({plate,phone,time,called:false});
+  document.getElementById('inp-plate').value='';
+  document.getElementById('inp-phone').value='';
+  carCount++;
+  document.getElementById('m-cars').textContent=carCount;
+  document.getElementById('parked-count').textContent=cars.length;
+  const flash=document.getElementById('reg-success');
+  flash.style.display='block';
+  setTimeout(()=>{flash.style.display='none';},3000);
+  addActivity('<span class="activity-plate">'+plate+'</span> registered at entry','parked');
+  showTab('parked');
+}
+
+function addActivity(text,type){
+  const now=new Date();
+  const time=now.toLocaleTimeString('en-GH',{hour:'2-digit',minute:'2-digit'});
+  const list=document.getElementById('activity-list');
+  const item=document.createElement('div');
+  item.className='activity-item';
+  item.innerHTML='<div class="activity-dot '+type+'"></div><div><div class="activity-text">'+text+'</div><div class="activity-time">'+time+'</div></div>';
+  list.prepend(item);
+}
+
+window.speechSynthesis.onvoiceschanged=()=>window.speechSynthesis.getVoices();
+</script>
+</body>
+</html>
